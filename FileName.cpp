@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <string>
 #include <cstdlib>
 #include <fstream>
@@ -7,124 +7,131 @@
 #include <sstream>
 using namespace std;
 
-const int MAX_DISH = 50;
-const int MAX_USER = 500;
-const int MAX_ORDER = 1000;
-const int MAX_CLASS = 50;
-const int MAX_REVIEW = 1000;
-const int MAX_COMPLAINT = 500;
-const int MAX_STOCK = 2000;
-const int LOW_STOCK = 10;
-const int MAX_ORDER_ITEM = 10;
+// ===================== 全局常量定义 =====================
+const int MAX_DISH = 50;        // 菜品最大数量
+const int MAX_USER = 500;       // 用户（学生/管理员）最大数量
+const int MAX_ORDER = 1000;     // 订单最大数量
+const int MAX_CLASS = 50;       // 班级最大数量
+const int MAX_REVIEW = 1000;    // 菜品评价最大数量
+const int MAX_COMPLAINT = 500;  // 投诉记录最大数量
+const int MAX_STOCK = 2000;     // 库存变动记录最大数量
+const int LOW_STOCK = 10;       // 低库存预警阈值
+const int MAX_ORDER_ITEM = 10;  // 单个订单最多可选菜品种类
 
+// ===================== 数据结构体定义 =====================
+// 菜品信息结构体
 struct Dish {
-    int id;
-    string name;
-    double price;
-    int stock;
-    double totalRating;
-    int ratingCount;
+    int id;                 // 菜品编号
+    string name;            // 菜品名称
+    double price;           // 菜品单价
+    int stock;              // 当前库存份数
+    double totalRating;     // 累计评分总分
+    int ratingCount;        // 累计评价人数
 };
 
+// 班级信息结构体
 struct ClassInfo {
-    string className;
-    string major;
-    int studentCount;
+    string className;       // 班级名称
+    string major;           // 所属专业
+    int studentCount;       // 班级学生总数
 };
 
+// 学生用户结构体
 struct User {
-    string id;
-    string name;
-    string pwd;
-    int grade;
-    string major;
-    string className;
-    string birth;
-    string number;
-    double money;
+    string id;              // 学号
+    string name;            // 姓名
+    string pwd;             // 登录密码
+    int grade;              // 年级
+    string major;           // 专业
+    string className;       // 所在班级
+    string birth;           // 出生日期
+    string number;          // 联系电话
+    double money;           // 校园卡账户余额
 };
 
+// 管理员/食堂员工结构体
 struct Manager {
-    string id;
-    string name;
-    string pwd;
+    string id;              // 工号
+    string name;            // 姓名
+    string pwd;             // 登录密码
 };
 
+// 订单内单个菜品项
 struct BuyItem {
-    int dishId;
-    int num;
+    int dishId;             // 菜品ID
+    int num;                // 购买份数
 };
 
+// 订单结构体
 struct Order {
-    string orderId;
-    string userId;
-    BuyItem list[MAX_ORDER_ITEM];
-    int itemCnt;  
-    double total;
-    int status;
+    string orderId;         // 订单编号
+    string userId;          // 下单学生学号
+    BuyItem list[MAX_ORDER_ITEM]; // 订单菜品列表
+    int itemCnt;            // 订单内菜品种类数
+    double total;           // 订单总金额
+    int status;             // 订单状态：0-未支付 1-已支付待取餐 2-已取餐
 };
 
+// 菜品评价结构体
 struct Review {
-    string orderId;
-    string userId;
-    int dishId;
-    int star;
-    string comment;
+    string orderId;         // 关联订单号
+    string userId;          // 评价人学号
+    int dishId;             // 被评价菜品ID
+    int star;               // 星级评分 1~5
+    string comment;         // 文字评价内容
 };
 
+// 投诉建议结构体
 struct Complaint {
-    int id;
-    string userId;
-    string type;
-    string content;
-    string reply;
-    int status;
+    int id;                 // 投诉编号
+    string userId;          // 投诉人学号
+    string type;            // 投诉类型
+    string content;         // 投诉内容
+    string reply;           // 管理员回复
+    int status;             // 处理状态：0-待处理 1-已处理
 };
 
+// 库存变动记录结构体
 struct StockRecord {
-    int id;
-    int dishId;
-    int quantity;
-    string opType;
-    string date;
-    string operatorName;
+    int id;                 // 记录编号
+    int dishId;             // 菜品ID
+    int quantity;           // 变动数量
+    string opType;          // 操作类型：采购/消耗
+    string date;            // 操作日期
+    string operatorName;    // 操作人姓名
 };
 
+// ===================== 全局数据数组与计数器 =====================
+Manager mgrList[MAX_USER];      // 管理员数组
+int mgrCnt = 0;                 // 管理员总数
+Dish dishList[MAX_DISH];        // 菜品数组
+int dishCnt = 0;                // 菜品总数
+User userList[MAX_USER];        // 学生数组
+int userCnt = 0;                // 学生总数
+Order orderList[MAX_ORDER];     // 订单数组
+int orderCnt = 0;               // 订单总数
+ClassInfo classList[MAX_CLASS]; // 班级数组
+int classCnt = 0;               // 班级总数
+Review reviewList[MAX_REVIEW];  // 评价数组
+int reviewCnt = 0;              // 评价总数
+Complaint complaintList[MAX_COMPLAINT]; // 投诉数组
+int complaintCnt = 0;           // 投诉总数
+StockRecord stockList[MAX_STOCK]; // 库存记录数组
+int stockCnt = 0;               // 库存记录总数
 
-Manager mgrList[MAX_USER];
-int mgrCnt = 0;
+int loginIdx = -1;              // 当前登录用户的数组下标，-1表示未登录
+bool isManager = false;         // 当前登录角色标记：true管理员 false学生
+string currentDate = "2026-07-21"; // 系统当前日期
 
-Dish dishList[MAX_DISH];
-int dishCnt = 0;
-
-User userList[MAX_USER];
-int userCnt = 0;
-
-Order orderList[MAX_ORDER];
-int orderCnt = 0;
-
-ClassInfo classList[MAX_CLASS];
-int classCnt = 0;
-
-Review reviewList[MAX_REVIEW];
-int reviewCnt = 0;
-
-Complaint complaintList[MAX_COMPLAINT];
-int complaintCnt = 0;
-
-StockRecord stockList[MAX_STOCK];
-int stockCnt = 0;
-
-int loginIdx = -1;
-bool isManager = false;
-string currentDate = "2026-07-21";
-
+// ===================== 工具函数 =====================
+// 整数转字符串，用于生成订单号
 string intToStr(int num) {
     stringstream ss;
     ss << num;
     return ss.str();
 }
 
+// 根据菜品ID查找，返回数组下标；找不到返回-1
 int findDish(int id) {
     for (int i = 0; i < dishCnt; i++) {
         if (dishList[i].id == id) return i;
@@ -132,6 +139,7 @@ int findDish(int id) {
     return -1;
 }
 
+// 根据学号查找学生，返回数组下标；找不到返回-1
 int findUser(string id) {
     for (int i = 0; i < userCnt; i++) {
         if (userList[i].id == id) return i;
@@ -139,6 +147,7 @@ int findUser(string id) {
     return -1;
 }
 
+// 根据班级名查找班级，返回数组下标；找不到返回-1
 int findClass(string name) {
     for (int i = 0; i < classCnt; i++) {
         if (classList[i].className == name) return i;
@@ -146,6 +155,7 @@ int findClass(string name) {
     return -1;
 }
 
+// 获取当前登录操作人的姓名
 string getOperator() {
     if (isManager) {
         return mgrList[loginIdx].name;
@@ -155,6 +165,7 @@ string getOperator() {
     }
 }
 
+// 更新所有班级的学生人数统计
 void updateClassCount() {
     for (int i = 0; i < classCnt; i++) {
         int cnt = 0;
@@ -166,11 +177,13 @@ void updateClassCount() {
         classList[i].studentCount = cnt;
     }
 }
- 
 
+// ===================== 文件持久化函数 =====================
+// 将所有数据保存到本地TXT文件
 void saveAll() {
     ofstream f;
 
+    // 保存菜品数据
     f.open("data_dish.txt");
     f << dishCnt << endl;
     for (int i = 0; i < dishCnt; i++) {
@@ -183,6 +196,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存学生数据
     f.open("data_user.txt");
     f << userCnt << endl;
     for (int i = 0; i < userCnt; i++) {
@@ -198,6 +212,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存管理员数据
     f.open("data_manager.txt");
     f << mgrCnt << endl;
     for (int i = 0; i < mgrCnt; i++) {
@@ -207,6 +222,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存订单数据（含订单内菜品明细）
     f.open("data_order.txt");
     f << orderCnt << endl;
     for (int i = 0; i < orderCnt; i++) {
@@ -222,6 +238,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存班级数据
     f.open("data_class.txt");
     f << classCnt << endl;
     for (int i = 0; i < classCnt; i++) {
@@ -231,6 +248,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存评价数据
     f.open("data_review.txt");
     f << reviewCnt << endl;
     for (int i = 0; i < reviewCnt; i++) {
@@ -242,6 +260,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存投诉数据
     f.open("data_complaint.txt");
     f << complaintCnt << endl;
     for (int i = 0; i < complaintCnt; i++) {
@@ -254,6 +273,7 @@ void saveAll() {
     }
     f.close();
 
+    // 保存库存变动记录
     f.open("data_stock.txt");
     f << stockCnt << endl;
     for (int i = 0; i < stockCnt; i++) {
@@ -267,12 +287,15 @@ void saveAll() {
     f.close();
 }
 
+// 从本地TXT文件加载所有数据
 void loadAll() {
     ifstream f;
 
+    // 加载菜品
     f.open("data_dish.txt");
     if (f.is_open()) {
         f >> dishCnt;
+        // 读取失败或数值越界则重置为0
         if (f.fail() || dishCnt < 0 || dishCnt > MAX_DISH) dishCnt = 0;
         for (int i = 0; i < dishCnt; i++) {
             f >> dishList[i].id
@@ -289,6 +312,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载学生
     f.open("data_user.txt");
     if (f.is_open()) {
         f >> userCnt;
@@ -311,6 +335,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载管理员
     f.open("data_manager.txt");
     if (f.is_open()) {
         f >> mgrCnt;
@@ -327,6 +352,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载订单
     f.open("data_order.txt");
     if (f.is_open()) {
         f >> orderCnt;
@@ -338,6 +364,7 @@ void loadAll() {
                 >> orderList[i].total
                 >> orderList[i].status;
             if (f.fail()) { orderCnt = i; break; }
+            // 读取订单内的每一项菜品
             for (int j = 0; j < orderList[i].itemCnt; j++) {
                 f >> orderList[i].list[j].dishId
                     >> orderList[i].list[j].num;
@@ -347,6 +374,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载班级
     f.open("data_class.txt");
     if (f.is_open()) {
         f >> classCnt;
@@ -363,6 +391,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载评价
     f.open("data_review.txt");
     if (f.is_open()) {
         f >> reviewCnt;
@@ -381,6 +410,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载投诉
     f.open("data_complaint.txt");
     if (f.is_open()) {
         f >> complaintCnt;
@@ -400,6 +430,7 @@ void loadAll() {
     }
     f.close();
 
+    // 加载库存记录
     f.open("data_stock.txt");
     if (f.is_open()) {
         f >> stockCnt;
@@ -420,10 +451,10 @@ void loadAll() {
     f.close();
 }
 
-
+// 系统初始化：加载文件，无数据时写入默认测试数据
 void init() {
     loadAll();
-
+    // 初始化默认菜品
     if (dishCnt == 0) {
         dishList[dishCnt++] = { 1, "红烧肉饭", 15, 50, 0, 0 };
         dishList[dishCnt++] = { 2, "黄焖鸡", 16, 30, 0, 0 };
@@ -431,27 +462,27 @@ void init() {
         dishList[dishCnt++] = { 4, "番茄炒蛋", 10, 40, 0, 0 };
         dishList[dishCnt++] = { 5, "宫保鸡丁", 14, 35, 0, 0 };
     }
-
+    // 初始化默认班级
     if (classCnt == 0) {
         classList[classCnt++] = { "计科2301", "计算机科学与技术", 0 };
         classList[classCnt++] = { "软工2302", "软件工程", 0 };
         classList[classCnt++] = { "智科2301", "智能科学与技术", 0 };
     }
-
+    // 初始化默认学生账号
     if (userCnt == 0) {
         userList[userCnt++] = { "stu001", "小明", "123", 7, "计算机科学与技术", "计科2301", "2000-01-01", "12345678901", 100.0 };
         userList[userCnt++] = { "stu002", "小红", "123", 7, "软件工程", "软工2302", "2001-03-15", "13900001111", 80.0 };
     }
-
+    // 初始化默认管理员账号
     if (mgrCnt == 0) {
         mgrList[mgrCnt++] = { "sta001", "打饭阿姨", "123" };
         mgrList[mgrCnt++] = { "man001", "管理员", "123" };
     }
-
-    updateClassCount();
+    updateClassCount(); // 更新班级人数统计
 }
 
-
+// ===================== 登录模块 =====================
+// 登录验证：区分学生和管理员，成功返回数组下标，失败返回-1
 int login() {
     string id, pwd;
     cout << "\n========== 登录 ==========\n";
@@ -460,6 +491,7 @@ int login() {
     cout << "密码：";
     cin >> pwd;
 
+    // 先匹配学生账号
     for (int i = 0; i < userCnt; i++) {
         if (userList[i].id == id && userList[i].pwd == pwd) {
             cout << "欢迎学生 " << userList[i].name << endl;
@@ -467,7 +499,7 @@ int login() {
             return i;
         }
     }
-
+    // 再匹配管理员账号
     for (int i = 0; i < mgrCnt; i++) {
         if (mgrList[i].id == id && mgrList[i].pwd == pwd) {
             cout << "欢迎员工 " << mgrList[i].name << endl;
@@ -475,13 +507,12 @@ int login() {
             return i;
         }
     }
-
-
     cout << "账号或密码错误\n";
     return -1;
 }
 
-
+// ===================== 学生端功能函数 =====================
+// 展示食堂菜品菜单，含价格、库存、评分、低库存预警
 void showMenu() {
     cout << "\n========== 食堂菜单 ==========\n";
     cout << left << setw(6) << "ID"
@@ -490,25 +521,23 @@ void showMenu() {
         << setw(8) << "库存"
         << setw(10) << "平均分" << endl;
     cout << "----------------------------------------\n";
-
     for (int i = 0; i < dishCnt; i++) {
         double avg = 0;
         if (dishList[i].ratingCount > 0) {
             avg = dishList[i].totalRating / dishList[i].ratingCount;
         }
-
         cout << left << setw(6) << dishList[i].id
             << setw(14) << dishList[i].name
             << setw(8) << dishList[i].price
             << setw(8) << dishList[i].stock;
-
+        // 有评价则显示平均分，否则显示暂无
         if (dishList[i].ratingCount > 0) {
             cout << setw(10) << avg;
         }
         else {
             cout << setw(10) << "暂无";
         }
-
+        // 库存低于阈值显示预警
         if (dishList[i].stock <= LOW_STOCK) {
             cout << " [库存不足!]";
         }
@@ -516,18 +545,18 @@ void showMenu() {
     }
 }
 
-
+// 学生点餐：选菜、校验库存余额、扣钱扣库存、生成订单
 void studentOrder() {
     showMenu();
-
     Order ord;
-    ord.orderId = "ORD" + intToStr(1000 + orderCnt);
+    ord.orderId = "ORD" + intToStr(1000 + orderCnt); // 生成唯一订单号
     ord.userId = userList[loginIdx].id;
     ord.itemCnt = 0;
     ord.total = 0;
-    ord.status = 0;
-
+    ord.status = 0; // 初始未支付状态
     int dishId, num;
+
+    // 循环选菜，输入0结束
     while (true) {
         if (ord.itemCnt >= MAX_ORDER_ITEM) {
             cout << "\n订单菜品已达上限(" << MAX_ORDER_ITEM << "种)\n";
@@ -535,6 +564,7 @@ void studentOrder() {
         }
         cout << "\n输入菜品ID(0结束)：";
         cin >> dishId;
+        // 输入非法字符处理
         if (cin.fail()) {
             cin.clear();
             cin.ignore(1024, '\n');
@@ -548,16 +578,16 @@ void studentOrder() {
             cout << "菜品不存在\n";
             continue;
         }
-
         cout << "数量：";
         cin >> num;
+        // 校验数量合法性与库存
         if (cin.fail() || num <= 0 || num > dishList[idx].stock) {
             cin.clear();
             cin.ignore(1024, '\n');
             cout << "数量无效或库存不足\n";
             continue;
         }
-
+        // 加入订单
         ord.list[ord.itemCnt].dishId = dishId;
         ord.list[ord.itemCnt].num = num;
         ord.itemCnt++;
@@ -574,24 +604,24 @@ void studentOrder() {
     cout << "确认支付？(1/0)：";
     int confirm;
     cin >> confirm;
-
     if (confirm != 1) {
         cout << "已取消\n";
         return;
     }
-
+    // 余额校验
     if (userList[loginIdx].money < ord.total) {
         cout << "余额不足\n";
         return;
     }
 
+    // 扣减账户余额
     userList[loginIdx].money -= ord.total;
-
+    // 扣减菜品库存，记录库存消耗流水
     for (int i = 0; i < ord.itemCnt; i++) {
         int idx = findDish(ord.list[i].dishId);
         if (idx != -1) {
             dishList[idx].stock -= ord.list[i].num;
-
+            // 写入库存变动记录
             if (stockCnt < MAX_STOCK) {
                 stockList[stockCnt].id = stockCnt + 1;
                 stockList[stockCnt].dishId = ord.list[i].dishId;
@@ -601,43 +631,41 @@ void studentOrder() {
                 stockList[stockCnt].operatorName = userList[loginIdx].name;
                 stockCnt++;
             }
-
+            // 低库存提示
             if (dishList[idx].stock <= LOW_STOCK) {
                 cout << "【预警】" << dishList[idx].name
                     << " 库存仅剩 " << dishList[idx].stock << " 份\n";
             }
         }
     }
-
-    ord.status = 1;
+    ord.status = 1; // 更新为已支付待取餐
     orderList[orderCnt++] = ord;
     saveAll();
     cout << "支付成功！订单号：" << ord.orderId << endl;
 }
 
+// 学生账户充值
 void studentRecharge() {
     double money;
     cout << "\n当前余额：" << userList[loginIdx].money << "\n";
     cout << "充值金额：";
     cin >> money;
-
     if (cin.fail() || money <= 0) {
         cin.clear();
         cin.ignore(1024, '\n');
         cout << "金额必须大于0\n";
         return;
     }
-
     userList[loginIdx].money += money;
     saveAll();
     cout << "充值成功，新余额：" << userList[loginIdx].money << endl;
 }
 
+// 查看当前学生的所有订单
 void myOrders() {
     cout << "\n========== 我的订单 ==========\n";
     bool found = false;
     string status[] = { "未支付", "已支付待取餐", "已取餐" };
-
     for (int i = 0; i < orderCnt; i++) {
         if (orderList[i].userId == userList[loginIdx].id) {
             found = true;
@@ -655,26 +683,24 @@ void myOrders() {
             cout << endl;
         }
     }
-
     if (!found) cout << "暂无订单\n";
 }
 
+// 学生对订单菜品提交评价
 void addReview() {
     cout << "\n========== 评价 ==========\n";
-    myOrders();
-
+    myOrders(); // 先展示自己的订单
     string oid;
     cout << "输入订单号：";
     cin >> oid;
-
     int oi = -1;
+    // 查找属于自己的订单
     for (int i = 0; i < orderCnt; i++) {
         if (orderList[i].orderId == oid && orderList[i].userId == userList[loginIdx].id) {
             oi = i;
             break;
         }
     }
-
     if (oi == -1) {
         cout << "订单不存在\n";
         return;
@@ -686,15 +712,13 @@ void addReview() {
     cin >> dishId;
     cout << "评分(1-5)：";
     cin >> star;
-
     if (cin.fail() || star < 1 || star > 5) {
         cin.clear();
         cin.ignore(1024, '\n');
         cout << "评分无效\n";
         return;
     }
-
-    cin.ignore();
+    cin.ignore(); // 吸收换行符
     cout << "留言：";
     getline(cin, comment);
 
@@ -704,34 +728,33 @@ void addReview() {
         return;
     }
 
+    // 保存评价记录
     reviewList[reviewCnt].orderId = oid;
     reviewList[reviewCnt].userId = userList[loginIdx].id;
     reviewList[reviewCnt].dishId = dishId;
     reviewList[reviewCnt].star = star;
     reviewList[reviewCnt].comment = comment;
     reviewCnt++;
-
+    // 更新菜品累计评分
     dishList[idx].totalRating += star;
     dishList[idx].ratingCount++;
-
     saveAll();
     cout << "评价成功\n";
 }
 
+// 学生提交投诉建议
 void submitComplaint() {
     cout << "\n========== 投诉建议 ==========\n";
     cout << "1. 卫生问题\n2. 服务态度\n3. 菜品质量\n4. 其他\n";
     cout << "选择类型：";
     int t;
     cin >> t;
-
     if (cin.fail()) {
         cin.clear();
         cin.ignore(1024, '\n');
         cout << "输入无效\n";
         return;
     }
-
     string type;
     switch (t) {
     case 1: type = "卫生问题"; break;
@@ -752,15 +775,14 @@ void submitComplaint() {
     complaintList[complaintCnt].reply = "待处理";
     complaintList[complaintCnt].status = 0;
     complaintCnt++;
-
     saveAll();
     cout << "提交成功，编号：" << complaintCnt << endl;
 }
 
+// 学生查看自己的投诉记录与回复
 void myComplaints() {
     cout << "\n========== 我的投诉 ==========\n";
     bool found = false;
-
     for (int i = 0; i < complaintCnt; i++) {
         if (complaintList[i].userId == userList[loginIdx].id) {
             found = true;
@@ -771,16 +793,16 @@ void myComplaints() {
             cout << "回复：" << complaintList[i].reply << "\n";
         }
     }
-
     if (!found) cout << "暂无投诉\n";
 }
 
+// ===================== 管理员端功能函数 =====================
+// 取餐核销：输入订单号标记为已取餐
 void staffPick() {
     string oid;
     cout << "\n========== 取餐核销 ==========\n";
     cout << "输入订单号：";
     cin >> oid;
-
     for (int i = 0; i < orderCnt; i++) {
         if (orderList[i].orderId == oid) {
             if (orderList[i].status == 1) {
@@ -800,12 +822,12 @@ void staffPick() {
     cout << "订单不存在\n";
 }
 
+// 新增账号（学生或管理员）
 void addUser() {
     cout << "\n========== 新增账号 ==========\n";
     cout << "0.学生 1.员工：";
     int select;
     cin >> select;
-
     if (cin.fail()) {
         cin.clear();
         cin.ignore(1024, '\n');
@@ -813,12 +835,12 @@ void addUser() {
         return;
     }
 
+    // 新增学生账号
     if (select == 0) {
         if (userCnt >= MAX_USER) {
             cout << "用户已达上限\n";
             return;
         }
-
         User u;
         cout << "学号："; cin >> u.id;
         if (findUser(u.id) != -1) {
@@ -829,7 +851,6 @@ void addUser() {
         cout << "密码："; cin >> u.pwd;
         cout << "年级："; cin >> u.grade;
         cout << "专业："; cin >> u.major;
-
         cout << "\n现有班级：\n";
         for (int i = 0; i < classCnt; i++) {
             cout << "  " << classList[i].className << endl;
@@ -838,19 +859,17 @@ void addUser() {
         cout << "生日："; cin >> u.birth;
         cout << "手机："; cin >> u.number;
         u.money = 0;
-
         userList[userCnt++] = u;
         updateClassCount();
         saveAll();
         cout << "创建成功\n";
-
     }
+    // 新增员工账号
     else if (select == 1) {
         if (mgrCnt >= MAX_USER) {
             cout << "员工已达上限\n";
             return;
         }
-
         Manager m;
         cout << "工号："; cin >> m.id;
         for (int i = 0; i < mgrCnt; i++) {
@@ -867,12 +886,12 @@ void addUser() {
     }
 }
 
+// 新增菜品
 void addDish() {
     if (dishCnt >= MAX_DISH) {
         cout << "菜品已达上限\n";
         return;
     }
-
     Dish d;
     cout << "\n========== 新增菜品 ==========\n";
     cout << "菜品ID："; cin >> d.id;
@@ -885,9 +904,9 @@ void addDish() {
     cout << "库存："; cin >> d.stock;
     d.totalRating = 0;
     d.ratingCount = 0;
-
     dishList[dishCnt++] = d;
 
+    // 新增菜品初始库存记为采购记录
     if (stockCnt < MAX_STOCK) {
         stockList[stockCnt].id = stockCnt + 1;
         stockList[stockCnt].dishId = d.id;
@@ -897,19 +916,17 @@ void addDish() {
         stockList[stockCnt].operatorName = getOperator();
         stockCnt++;
     }
-
     saveAll();
     cout << "菜品创建成功\n";
 }
 
-
+// 展示班级列表
 void showClasses() {
     cout << "\n========== 班级列表 ==========\n";
     cout << left << setw(14) << "班级名"
         << setw(20) << "所属专业"
         << setw(10) << "人数" << endl;
     cout << "----------------------------------------\n";
-
     for (int i = 0; i < classCnt; i++) {
         cout << left << setw(14) << classList[i].className
             << setw(20) << classList[i].major
@@ -917,12 +934,12 @@ void showClasses() {
     }
 }
 
+// 新增班级
 void addClass() {
     if (classCnt >= MAX_CLASS) {
         cout << "班级已达上限\n";
         return;
     }
-
     ClassInfo c;
     cout << "\n========== 新增班级 ==========\n";
     cout << "班级名："; cin >> c.className;
@@ -932,26 +949,23 @@ void addClass() {
     }
     cout << "所属专业："; cin >> c.major;
     c.studentCount = 0;
-
     classList[classCnt++] = c;
     saveAll();
     cout << "创建成功\n";
 }
 
+// 修改班级信息，修改班级名会同步更新所有学生的班级字段
 void modifyClass() {
     cout << "\n========== 修改班级 ==========\n";
     showClasses();
-
     string oldName;
     cout << "输入要修改的班级名：";
     cin >> oldName;
-
     int idx = findClass(oldName);
     if (idx == -1) {
         cout << "班级不存在\n";
         return;
     }
-
     cout << "当前：" << classList[idx].className
         << " / " << classList[idx].major << endl;
 
@@ -962,6 +976,7 @@ void modifyClass() {
     cout << "新专业(直接回车不改)：";
     getline(cin, newMajor);
 
+    // 班级名变更，同步更新所有学生
     if (!newName.empty() && newName != oldName) {
         for (int i = 0; i < userCnt; i++) {
             if (userList[i].className == oldName) {
@@ -970,26 +985,23 @@ void modifyClass() {
         }
         classList[idx].className = newName;
     }
-
     if (!newMajor.empty()) {
         classList[idx].major = newMajor;
     }
-
     saveAll();
     cout << "修改成功\n";
 }
 
+// 统计各班订餐人数与订餐次数
 void statClassOrderCount() {
     cout << "\n========== 各班订餐统计 ==========\n";
     cout << left << setw(14) << "班级"
         << setw(14) << "订餐人数"
         << setw(14) << "订餐次数" << endl;
     cout << "----------------------------------------\n";
-
     for (int c = 0; c < classCnt; c++) {
         int personCnt = 0;
         int orderNum = 0;
-
         for (int i = 0; i < userCnt; i++) {
             if (userList[i].className == classList[c].className) {
                 bool hasOrder = false;
@@ -1002,29 +1014,25 @@ void statClassOrderCount() {
                 if (hasOrder) personCnt++;
             }
         }
-
         cout << left << setw(14) << classList[c].className
             << setw(14) << personCnt
             << setw(14) << orderNum << endl;
     }
 }
 
+// 按班级查询所有学生的订餐明细
 void queryClassOrders() {
     cout << "\n========== 按班级查询 ==========\n";
     showClasses();
-
     string className;
     cout << "输入班级名：";
     cin >> className;
-
     if (findClass(className) == -1) {
         cout << "班级不存在\n";
         return;
     }
-
     cout << "\n【" << className << "】订餐明细：\n";
     bool found = false;
-
     for (int i = 0; i < userCnt; i++) {
         if (userList[i].className == className) {
             for (int j = 0; j < orderCnt; j++) {
@@ -1046,10 +1054,10 @@ void queryClassOrders() {
             }
         }
     }
-
     if (!found) cout << "该班级暂无订餐记录\n";
 }
 
+// 展示全部学生列表
 void showAllUsers() {
     cout << "\n========== 学生列表 ==========\n";
     cout << left << setw(10) << "学号"
@@ -1057,7 +1065,6 @@ void showAllUsers() {
         << setw(14) << "班级"
         << setw(10) << "余额" << endl;
     cout << "----------------------------------------\n";
-
     for (int i = 0; i < userCnt; i++) {
         cout << left << setw(10) << userList[i].id
             << setw(10) << userList[i].name
@@ -1067,25 +1074,24 @@ void showAllUsers() {
     cout << "共 " << userCnt << " 名学生\n";
 }
 
+// 删除学生账号
 void deleteUser() {
     cout << "\n========== 删除学生 ==========\n";
     showAllUsers();
-
     string id;
     cout << "输入学号：";
     cin >> id;
-
     int idx = findUser(id);
     if (idx == -1) {
         cout << "学生不存在\n";
         return;
     }
-
     cout << "确认删除 " << userList[idx].name << "？(1/0)：";
     int confirm;
     cin >> confirm;
     if (confirm != 1) return;
 
+    // 数组元素前移覆盖实现删除
     for (int i = idx; i < userCnt - 1; i++) {
         userList[i] = userList[i + 1];
     }
@@ -1095,36 +1101,31 @@ void deleteUser() {
     cout << "删除成功\n";
 }
 
+// 修改学生信息
 void modifyUser() {
     cout << "\n========== 修改学生 ==========\n";
     showAllUsers();
-
     string id;
     cout << "输入学号：";
     cin >> id;
-
     int idx = findUser(id);
     if (idx == -1) {
         cout << "学生不存在\n";
         return;
     }
-
     cout << "\n当前信息：\n";
     cout << "姓名：" << userList[idx].name << endl;
     cout << "班级：" << userList[idx].className << endl;
     cout << "余额：" << userList[idx].money << endl;
-
     cout << "\n1.姓名 2.密码 3.班级 4.余额 0.取消\n";
     int op;
     cin >> op;
-
     if (cin.fail()) {
         cin.clear();
         cin.ignore(1024, '\n');
         cout << "输入无效\n";
         return;
     }
-
     switch (op) {
     case 1:
         cout << "新姓名："; cin >> userList[idx].name; break;
@@ -1139,17 +1140,16 @@ void modifyUser() {
     case 0: return;
     default: cout << "无效\n"; return;
     }
-
     saveAll();
     cout << "修改成功\n";
 }
 
+// 按姓名模糊查询学生
 void queryUserByName() {
     cout << "\n========== 按姓名查询 ==========\n";
     string name;
     cout << "输入姓名(支持模糊)：";
     cin >> name;
-
     bool found = false;
     for (int i = 0; i < userCnt; i++) {
         if (userList[i].name.find(name) != string::npos) {
@@ -1163,26 +1163,23 @@ void queryUserByName() {
     if (!found) cout << "未找到\n";
 }
 
+// 查询某菜品的所有订购学生与累计销量
 void queryDishOrders() {
     cout << "\n========== 菜品订购查询 ==========\n";
     showMenu();
-
     int dishId;
     cout << "输入菜品ID：";
     cin >> dishId;
-
     int idx = findDish(dishId);
     if (idx == -1) {
         cout << "菜品不存在\n";
         return;
     }
-
     cout << "\n订购【" << dishList[idx].name << "】的学生：\n";
     bool found = false;
     int totalQty = 0;
-
     for (int i = 0; i < orderCnt; i++) {
-        if (orderList[i].status < 1) continue;
+        if (orderList[i].status < 1) continue; // 只统计已支付订单
         for (int j = 0; j < orderList[i].itemCnt; j++) {
             if (orderList[i].list[j].dishId == dishId) {
                 found = true;
@@ -1195,7 +1192,6 @@ void queryDishOrders() {
             }
         }
     }
-
     if (!found) {
         cout << "暂无学生订购\n";
     }
@@ -1204,10 +1200,10 @@ void queryDishOrders() {
     }
 }
 
+// 低库存预警检查
 void checkLowStock() {
     cout << "\n========== 低库存预警 ==========\n";
     bool hasWarning = false;
-
     for (int i = 0; i < dishCnt; i++) {
         if (dishList[i].stock <= LOW_STOCK) {
             hasWarning = true;
@@ -1215,37 +1211,32 @@ void checkLowStock() {
                 << " 剩余：" << dishList[i].stock << " 份\n";
         }
     }
-
     if (!hasWarning) cout << "库存充足\n";
 }
 
+// 采购入库，增加菜品库存
 void purchaseStock() {
     cout << "\n========== 采购入库 ==========\n";
     showMenu();
-
     int dishId, qty;
     cout << "输入菜品ID：";
     cin >> dishId;
-
     int idx = findDish(dishId);
     if (idx == -1) {
         cout << "菜品不存在\n";
         return;
     }
-
     cout << "当前库存：" << dishList[idx].stock << endl;
     cout << "采购数量：";
     cin >> qty;
-
     if (cin.fail() || qty <= 0) {
         cin.clear();
         cin.ignore(1024, '\n');
         cout << "数量必须大于0\n";
         return;
     }
-
     dishList[idx].stock += qty;
-
+    // 记录采购流水
     if (stockCnt < MAX_STOCK) {
         stockList[stockCnt].id = stockCnt + 1;
         stockList[stockCnt].dishId = dishId;
@@ -1255,11 +1246,11 @@ void purchaseStock() {
         stockList[stockCnt].operatorName = getOperator();
         stockCnt++;
     }
-
     saveAll();
     cout << "采购成功，新库存：" << dishList[idx].stock << endl;
 }
 
+// 查看全部库存变动记录
 void showStockRecords() {
     cout << "\n========== 库存变动记录 ==========\n";
     cout << left << setw(6) << "ID"
@@ -1269,11 +1260,9 @@ void showStockRecords() {
         << setw(14) << "日期"
         << setw(12) << "操作人" << endl;
     cout << "--------------------------------------------------------\n";
-
     for (int i = 0; i < stockCnt; i++) {
         int idx = findDish(stockList[i].dishId);
         string dname = (idx != -1) ? dishList[idx].name : "已删除";
-
         cout << left << setw(6) << stockList[i].id
             << setw(14) << dname
             << setw(8) << stockList[i].opType
@@ -1284,24 +1273,21 @@ void showStockRecords() {
     cout << "共 " << stockCnt << " 条记录\n";
 }
 
+// 查看菜品评价，可指定菜品或查看全部
 void showDishReviews() {
     cout << "\n========== 查看评价 ==========\n";
     showMenu();
-
     int dishId;
     cout << "输入菜品ID(0查看全部)：";
     cin >> dishId;
-
     bool found = false;
     for (int i = 0; i < reviewCnt; i++) {
         if (dishId != 0 && reviewList[i].dishId != dishId) continue;
-
         found = true;
         int idx = findDish(reviewList[i].dishId);
         string dname = (idx != -1) ? dishList[idx].name : "未知";
         int uidx = findUser(reviewList[i].userId);
         string uname = (uidx != -1) ? userList[uidx].name : "未知";
-
         cout << "  菜品：" << dname
             << " 评分：" << reviewList[i].star << "星"
             << " 学生：" << uname << endl;
@@ -1310,17 +1296,16 @@ void showDishReviews() {
     if (!found) cout << "暂无评价\n";
 }
 
+// 查看所有投诉列表
 void showComplaints() {
     cout << "\n========== 投诉列表 ==========\n";
     if (complaintCnt == 0) {
         cout << "暂无投诉\n";
         return;
     }
-
     for (int i = 0; i < complaintCnt; i++) {
         int uidx = findUser(complaintList[i].userId);
         string uname = (uidx != -1) ? userList[uidx].name : "未知";
-
         cout << "编号：" << complaintList[i].id
             << " 学生：" << uname
             << " 类型：" << complaintList[i].type
@@ -1331,14 +1316,13 @@ void showComplaints() {
     }
 }
 
+// 处理投诉：填写回复并标记为已处理
 void handleComplaint() {
     cout << "\n========== 处理投诉 ==========\n";
     showComplaints();
-
     int id;
     cout << "输入投诉编号：";
     cin >> id;
-
     int idx = -1;
     for (int i = 0; i < complaintCnt; i++) {
         if (complaintList[i].id == id) {
@@ -1346,17 +1330,14 @@ void handleComplaint() {
             break;
         }
     }
-
     if (idx == -1) {
         cout << "投诉不存在\n";
         return;
     }
-
     if (complaintList[idx].status == 1) {
         cout << "已处理\n";
         return;
     }
-
     string reply;
     cin.ignore();
     cout << "输入回复：";
@@ -1367,6 +1348,7 @@ void handleComplaint() {
     cout << "处理完成\n";
 }
 
+// 统计总营收与有效订单数
 void showTotal() {
     double sum = 0;
     int cnt = 0;
@@ -1380,9 +1362,10 @@ void showTotal() {
     cout << "有效订单：" << cnt << " 单\n";
 }
 
+// 菜品销量排行榜（按销量降序）
 void showDishSalesRank() {
     int sales[MAX_DISH] = { 0 };
-
+    // 统计每个菜品的总销量
     for (int i = 0; i < orderCnt; i++) {
         if (orderList[i].status < 1) continue;
         for (int j = 0; j < orderList[i].itemCnt; j++) {
@@ -1390,10 +1373,10 @@ void showDishSalesRank() {
             if (idx != -1) sales[idx] += orderList[i].list[j].num;
         }
     }
-
+    // 下标数组，用于冒泡排序
     int rankIdx[MAX_DISH];
     for (int i = 0; i < dishCnt; i++) rankIdx[i] = i;
-
+    // 冒泡排序：按销量从高到低
     for (int i = 0; i < dishCnt - 1; i++) {
         for (int j = 0; j < dishCnt - i - 1; j++) {
             if (sales[rankIdx[j]] < sales[rankIdx[j + 1]]) {
@@ -1410,7 +1393,6 @@ void showDishSalesRank() {
         << setw(10) << "销量"
         << setw(12) << "销售额" << endl;
     cout << "----------------------------------------\n";
-
     for (int i = 0; i < dishCnt; i++) {
         int idx = rankIdx[i];
         double revenue = sales[idx] * dishList[idx].price;
@@ -1421,10 +1403,12 @@ void showDishSalesRank() {
     }
 }
 
+// 综合数据统计概览
 void showStatistics() {
     cout << "\n========== 综合统计 ==========\n";
     showTotal();
 
+    // 统计活跃订餐学生数
     int activeStu = 0;
     for (int i = 0; i < userCnt; i++) {
         for (int j = 0; j < orderCnt; j++) {
@@ -1434,12 +1418,12 @@ void showStatistics() {
             }
         }
     }
-
     cout << "注册学生：" << userCnt << " 人\n";
     cout << "活跃订餐：" << activeStu << " 人\n";
     cout << "班级数量：" << classCnt << " 个\n";
     cout << "菜品数量：" << dishCnt << " 道\n";
 
+    // 统计待处理投诉数
     int pending = 0;
     for (int i = 0; i < complaintCnt; i++) {
         if (complaintList[i].status == 0) pending++;
@@ -1447,6 +1431,8 @@ void showStatistics() {
     cout << "待处理投诉：" << pending << " 条\n";
 }
 
+// ===================== 各级菜单函数 =====================
+// 班级管理子菜单
 void classManageMenu() {
     int op;
     while (true) {
@@ -1465,7 +1451,6 @@ void classManageMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1: 
             showClasses(); 
@@ -1499,6 +1484,7 @@ void classManageMenu() {
     }
 }
 
+// 学生管理子菜单
 void userManageMenu() {
     int op;
     while (true) {
@@ -1517,7 +1503,6 @@ void userManageMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1: 
             showAllUsers(); 
@@ -1555,6 +1540,7 @@ void userManageMenu() {
     }
 }
 
+// 库存管理子菜单
 void stockManageMenu() {
     int op;
     while (true) {
@@ -1573,7 +1559,6 @@ void stockManageMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1:
             showMenu(); 
@@ -1607,6 +1592,7 @@ void stockManageMenu() {
     }
 }
 
+// 评价与反馈管理子菜单
 void feedbackManageMenu() {
     int op;
     while (true) {
@@ -1623,7 +1609,6 @@ void feedbackManageMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1:
             showDishReviews();
@@ -1646,6 +1631,7 @@ void feedbackManageMenu() {
     }
 }
 
+// 数据统计子菜单
 void statisticsMenu() {
     int op;
     while (true) {
@@ -1663,7 +1649,6 @@ void statisticsMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1: 
             showStatistics(); 
@@ -1691,6 +1676,7 @@ void statisticsMenu() {
     }
 }
 
+// 学生端主菜单
 void studentMenu() {
     system("pause");
     system("cls");
@@ -1714,7 +1700,6 @@ void studentMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1: 
             showMenu();
@@ -1752,7 +1737,6 @@ void studentMenu() {
             system("cls");
             break;
         case 8:
-        
             system("cls");
             saveAll();
             loginIdx = login();
@@ -1767,6 +1751,7 @@ void studentMenu() {
     }
 }
 
+// 管理员端主菜单
 void managerMenu() {
     system("pause");
     system("cls");
@@ -1790,7 +1775,6 @@ void managerMenu() {
             cout << "输入无效，请输入数字\n";
             continue;
         }
-
         switch (op) {
         case 1: 
             showMenu();
@@ -1828,7 +1812,6 @@ void managerMenu() {
             system("cls");
             break;
         case 8:
-            
             system("cls");
             saveAll();
             loginIdx = login();
@@ -1843,6 +1826,7 @@ void managerMenu() {
     }
 }
 
+// 总菜单分发：根据角色进入对应菜单
 void mainMenu() {
     while (true) {
         if (isManager) {
@@ -1854,14 +1838,15 @@ void mainMenu() {
     }
 }
 
+// ===================== 程序主入口 =====================
 int main() {
-    init();
-
+    init(); // 系统初始化
     cout << "========================================" << endl;
     cout << "           校园食堂订餐管理系统         " << endl;
     cout << "========================================" << endl;
 
-    jixv:loginIdx = login();
+    // 登录入口，支持重试
+jixv:loginIdx = login();
     while(loginIdx == -1) {
         cout << "登录失败\n";
         cout << "是否重新登录？(1继续,0退出)" << endl;
@@ -1869,14 +1854,15 @@ int main() {
         cin >> con;
         system("cls");
         if (con == 1) {
-            goto jixv;
+            goto jixv; // 跳回登录
         }
         else {
-            goto wanbi;     
+            goto wanbi; // 跳转到退出
         }
         return 0;
     }
-    mainMenu();
-    wanbi:cout << "再见！" << endl;
+    mainMenu(); // 进入主菜单循环
+
+wanbi:cout << "再见！" << endl;
     return 0;
 }
